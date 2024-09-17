@@ -1,6 +1,7 @@
 package nl.ricoapon.calculator.combinators
 
 import nl.ricoapon.calculator.types.ParseResult
+import nl.ricoapon.calculator.types.ParseResult.Failure
 import nl.ricoapon.calculator.types.ParseResult.Success
 import nl.ricoapon.calculator.types.Parser
 
@@ -16,7 +17,7 @@ fun <T> Parser<T>.repeat(atLeast: Int, atMost: Int = -1): Parser<List<T>> = Pars
     var previousResult: ParseResult<List<T>> = Success(emptyList(), input)
     while (atMost == -1 || i < atMost) {
         val nextResult = this.parse((previousResult as Success).rest)
-        if (nextResult is ParseResult.Failure) {
+        if (nextResult is Failure) {
             break
         }
         previousResult = Success(previousResult.data + (nextResult as Success).data, nextResult.rest)
@@ -24,10 +25,10 @@ fun <T> Parser<T>.repeat(atLeast: Int, atMost: Int = -1): Parser<List<T>> = Pars
     }
 
     if (i < atLeast) {
-        throw RuntimeException("Parser should be repeated $atLeast times, but was repeated $i times at most.")
+        Failure("Parser should be repeated $atLeast times, but was repeated $i times.")
+    } else {
+        previousResult
     }
-
-    previousResult
 }
 
 fun <T> Parser<T>.zeroOrMore(): Parser<List<T>> = repeat(0)
