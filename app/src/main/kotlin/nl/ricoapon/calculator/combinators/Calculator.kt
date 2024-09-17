@@ -1,22 +1,32 @@
 package nl.ricoapon.calculator.combinators
 
 import nl.ricoapon.calculator.types.Parser
-import kotlin.math.pow
-
-val operator: Parser<(Double, Double) -> (Double)> = choice(
-    map(character('+')) { _ -> Double::plus },
-    map(character('-')) { _ -> Double::minus },
-    map(character('*')) { _ -> Double::times },
-    map(character('/')) { _ -> Double::div },
-    map(character('^')) { _ -> Double::pow },
-)
 
 val number = map(digit().oneOrMore()) {
     it.joinToString("").toDouble()
 }
 
-fun expression(): Parser<Double> =
-    map((number and operator) and lazy { expression() }) { (first, right) ->
-        val (left, op) = first
-        op(left, right)
-    } or number
+// We define all operators as separate expressions based on their precedence. The lowest precedence will occur first, so
+// that parsing on these are done last.
+fun expression(): Parser<Double> = plusExpression().end()
+
+fun plusExpression(): Parser<Double> = map(chain(minusExpression(), character('+'))) {
+    if (it.terms.isEmpty()) {
+        0.0
+    } else {
+        it.terms.reduce {d, acc ->
+            d + acc
+        }
+    }
+} or number
+
+// Minus is left-associate, so we chain to the right.
+fun minusExpression(): Parser<Double> = map(chain(number, character('-'))) {
+    if (it.terms.isEmpty()) {
+        0.0
+    } else {
+        it.terms.reduce {d, acc ->
+            d - acc
+        }
+    }
+} or number

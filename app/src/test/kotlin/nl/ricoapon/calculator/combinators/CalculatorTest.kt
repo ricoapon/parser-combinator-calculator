@@ -15,9 +15,18 @@ class CalculatorTest {
     }
 
     private fun ParseResult<Double>.hasResult(result: Double) {
-        assertTrue(this is Success)
+        assertTrue(this is Success, "Got failure: $this")
         assertEquals(result, this.data)
-        assertTrue(this.rest.isEmpty(), "Leftover text should be empty")
+        assertEquals("", this.rest, "Leftover text should be empty")
+    }
+
+    @Nested
+    inner class CombinedOperators {
+        @Test
+        fun plusAndMinus() {
+            calculator.parse("4+5-9").hasResult(0)
+            calculator.parse("4-9+5").hasResult(0)
+        }
     }
 
     @Nested
